@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  Live update threads and get notified when a new message is posted
 // @author       Nuclear
-// @match        http://www.godlikeproductions.com/
+// @match        http://www.godlikeproductions.com/*
 // @grant        none
 // ==/UserScript==
 
