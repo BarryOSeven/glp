@@ -113,10 +113,13 @@ var GLP = {
 		userContainer.style.backgroundColor = Settings.newMessageColor;
 
 		var removeBackgroundColor = function() {
+			this.removeEventListener('mouseenter', GLP.messageHandlers[this].function);
+
 			var userContainer = this.getElementsByClassName('replyauthor')[0];
 			userContainer.style.backgroundColor = GLP.messageHandlers[this].color;
-			this.removeEventListener('mouseenter', GLP.messageHandlers[this].function);
-			GLP.newMessageNumber--;
+			if(GLP.newMessageNumber > 0) {
+				GLP.newMessageNumber--;
+			}
 			GLP.notifyNewMessages();
 		};
 
