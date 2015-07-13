@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Godlike Productions Forum Enhancements
 // @namespace    http://godlikeproductions.com/
-// @version      0.1
+// @version      0.2
 // @description  Live update threads and get notified when a new message is posted
 // @author       Nuclear
 // @match        http://www.godlikeproductions.com/*
