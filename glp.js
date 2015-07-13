@@ -1,19 +1,33 @@
-/*
+// ==UserScript==
+// @name         Godlike Productions Forum Enhancements
+// @namespace    http://godlikeproductions.com/
+// @version      0.1
+// @description  Live update threads and get notified when a new message is posted
+// @author       Nuclear
+// @match        http://www.godlikeproductions.com/forum1/message2742398/pg753
+// @grant        none
+// ==/UserScript==
 
-TODO:
-show new messages number
-show refresh indicator
-*/
+var Settings = {
+	newMessageColor: '#ff00ff',
+	pollTime: 10000 //ms
+}
 
 var GLP = {
+	debug: true,
 	currentUrl: null,
 	currentPageNumber: null,
 	fetchPageNumber: null,
 	currentMessages: null,
-	pollTime: 10000, //ms
-	isFocused: true,
+	//isFocused: true,
 	didFlip: false,
 	newMessageNumber: 0,
+	messageHandlers: {},
+	log: function(message) {
+		if(this.debug) {
+			console.log(message);
+		}
+	},
 	init: function() {
 		this.currentUrl = window.location.href;
 		this.currentPageNumber = this.getCurrentPageNumber(this.currentUrl);
@@ -25,18 +39,9 @@ var GLP = {
 
 		this.fetchCurrentMessages();
 
-		if(Util.isTopic(this.currentUrl) && Util.isLastPage(this.currentPageNumber)) {
-			this.startFetchTimer(this.pollTime);
+		if(Util.isTopic(this.currentUrl)/* && Util.isLastPage(this.currentPageNumber)*/) {
+			this.startFetchTimer(Settings.pollTime);
 		}
-
-		window.onfocus = function() {
-			GLP.isFocused = true;
-			GLP.removeNotify();
-		}
-
-		window.onblur = function() {
-    		GLP.isFocused = false;
-}		;
 
 	},
 	fetchCurrentMessages: function() {
@@ -49,9 +54,10 @@ var GLP = {
 		GLP.parseMessages(responseText);
 	},
 	onError: function() {
-		GLP.startFetchTimer();
+		GLP.startFetchTimer(Settings.pollTime);
 	},
 	parseMessages: function(domString) {
+		console.log('nmn: ' + this.newMessageNumber);
 		var parser = new DOMParser();
 		var doc = parser.parseFromString(domString, "text/html");
 
@@ -71,11 +77,12 @@ var GLP = {
 				}
 
 				if(!found) {
+					this.enableUserFeedback(message);
 					lastElementPointer.parentNode.insertBefore(message, lastElementPointer.parentNode.lastChild);
 					var lastElementPointer = message;
 					this.newMessageNumber++;
 				} else {
-					console.log('not a new message');
+					this.log('not a new message');
 				}
 			}
 
@@ -83,12 +90,14 @@ var GLP = {
 
 			var lastPostId = this.currentMessages[this.currentMessages.length-1].id;
 			
-			if(lastPostId === 'post_31' && this.didFlip === false) {
-				console.log('flipped page');
+			this.log(newMessages.length);
+
+			if(lastPostId === 'post_31' && (this.didFlip === false || newMessages.length === 30)) {
+				this.log('flipped page');
 				this.fetchPageNumber++;
 				this.didFlip = true;
 			} else if (lastPostId === 'post_31') {
-				console.log('tried tp flip page but could not');
+				this.log('tried tp flip page but could not');
 			} else {
 				this.didFlip = false;
 			}
@@ -96,22 +105,42 @@ var GLP = {
 			this.notifyNewMessages();
 		}
 
-		/**/
+		this.startFetchTimer(Settings.pollTime);
+	},
+	enableUserFeedback: function(element) {
+		var userContainer = element.getElementsByClassName('replyauthor')[0];
+		var oldColor = userContainer.style.backgroundColor;
+		userContainer.style.backgroundColor = Settings.newMessageColor;
 
-		this.startFetchTimer(this.pollTime);
+		var removeBackgroundColor = function() {
+			var userContainer = this.getElementsByClassName('replyauthor')[0];
+			userContainer.style.backgroundColor = GLP.messageHandlers[this].color;
+			this.removeEventListener('mouseenter', GLP.messageHandlers[this].function);
+			GLP.newMessageNumber--;
+			GLP.notifyNewMessages();
+		};
+
+		element.addEventListener("mouseenter", removeBackgroundColor);
+
+		this.messageHandlers[element] = {
+			function: removeBackgroundColor,
+			color: oldColor
+		};
+
 	},
 	startFetchTimer: function(pollTime) {
 		setTimeout(GLP.fetchNewMessages, pollTime);
 	},
 	removeNotify: function() {
-		console.log('removing notify');
 		document.title = document.title.replace(/^\[[0-9]+\]/g,'');
 	},
 	notifyNewMessages: function() {
-		if(!this.isFocused && this.newMessageNumber > 0) {
+		if(this.newMessageNumber > 0) {
 			var title = document.title;
 			title = title.replace(/^\[[0-9]+\] /g,'');
 			document.title = '[' + this.newMessageNumber + '] ' + title;
+		} else {
+			this.removeNotify();
 		}
 	},
 	getCurrentPageNumber: function(url) {
@@ -136,12 +165,12 @@ var GLP = {
 	    xmlhttp.onreadystatechange = function() {
 	        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
 	           	if(xmlhttp.status == 200){
-	           		//console.log(xmlhttp.responseText);
+	           		//this.log(xmlhttp.responseText);
 	           		onFinnish(xmlhttp.responseText);
 	               //document.getElementById("myDiv").innerHTML = xmlhttp.responseText;
 	           	} else {
 	           		onError();
-	           		console.log('Error: ' + xmlhttp.status);
+	           		GLP.log('Error: ' + xmlhttp.status);
 	           	}
 	        }
 	    }
