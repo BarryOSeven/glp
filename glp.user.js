@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Godlike Productions Forum Enhancements
 // @namespace    http://godlikeproductions.com/
-// @version      0.2
+// @version      0.3
 // @description  Live update threads and get notified when a new message is posted
 // @author       Nuclear
 // @match        http://www.godlikeproductions.com/*
@@ -14,12 +14,11 @@ var Settings = {
 }
 
 var GLP = {
-	debug: true,
+	debug: false,
 	currentUrl: null,
 	currentPageNumber: null,
 	fetchPageNumber: null,
 	currentMessages: null,
-	//isFocused: true,
 	didFlip: false,
 	newMessageNumber: 0,
 	messageHandlers: {},
@@ -57,7 +56,7 @@ var GLP = {
 		GLP.startFetchTimer(Settings.pollTime);
 	},
 	parseMessages: function(domString) {
-		console.log('nmn: ' + this.newMessageNumber);
+		this.log('nmn: ' + this.newMessageNumber);
 		var parser = new DOMParser();
 		var doc = parser.parseFromString(domString, "text/html");
 
